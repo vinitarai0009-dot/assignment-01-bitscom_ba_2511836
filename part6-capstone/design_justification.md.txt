@@ -1,0 +1,33 @@
+## Storage Systems
+
+**PostgreSQL (OLTP)** – We use PostgreSQL as the source‑of‑truth for all operational data: patient registration, admissions, appointments, and billing entries. It provides ACID compliance for critical transactions and strong consistency, which is essential for patient safety.
+
+**TimescaleDB** – ICU vitals are high‑frequency time‑series data. TimescaleDB, built on PostgreSQL, offers automatic partitioning, continuous aggregates, and efficient time‑based queries. It serves real‑time dashboards and alerting for medical staff while also streaming data to the data lake for long‑term analysis.
+
+**Data Lake (cloud object storage)** – Raw and curated data (EMR extracts, vitals archives, lab results) is stored in a data lake using open formats (Parquet, Delta Lake). This allows scalable, cost‑effective storage for ML training and historical analytics without imposing rigid schemas.
+
+**Data Warehouse (Snowflake)** – For structured reporting (monthly bed occupancy, department costs), we need high‑performance aggregations and joins. A modern cloud data warehouse provides fast query performance, separation of compute/storage, and integration with BI tools.
+
+**Vector Database (Pinecone)** – To enable doctors to query patient history in plain English, we convert clinical notes into embeddings and store them in a vector database. This supports semantic similarity search, retrieving relevant records based on meaning rather than keyword matching – essential for natural language queries.
+
+## OLTP vs OLAP Boundary
+
+The boundary is clearly drawn at the point where data leaves the operational systems. PostgreSQL (OLTP) handles day‑to‑day transactions and serves the clinical front‑end. All analytical and ML workloads read from copies of the data stored in the data lake or data warehouse, never directly from the OLTP database. This separation:
+
+- **Prevents performance degradation** – analytical queries do not impact clinical operations.
+- **Enables schema evolution** – analytical storage can be denormalized without affecting OLTP.
+- **Supports different consistency models** – OLTP requires strong consistency; analytical layers can use eventual consistency and batch refreshes.
+
+Change data capture (CDC) streams transactions from PostgreSQL to Kafka, which populates the data lake and warehouse. Real‑time vitals bypass OLTP entirely and go straight to TimescaleDB (for monitoring) and the data lake (for analytics).
+
+## Trade‑offs
+
+**Trade‑off: Complexity vs. Specialization** – Using multiple specialized storage systems (PostgreSQL, TimescaleDB, data lake, data warehouse, vector database) increases operational complexity, integration effort, and cost compared to a single monolithic database.
+
+**Mitigation**:
+- Adopt a **data lakehouse** approach (e.g., Databricks) to consolidate the data lake, warehouse, and even some time‑series capabilities into a single platform, reducing the number of components.
+- Use **managed cloud services** (AWS RDS, Timescale Cloud, Snowflake, Pinecone) to offload maintenance overhead.
+- Implement **Infrastructure as Code** (Terraform) to ensure consistent, reproducible deployments.
+- Establish clear **data contracts** between teams to define how data moves between systems, using tools like Kafka and dbt to manage pipelines declaratively.
+
+This trade‑off is justified because the specialized components enable each workload to run optimally – vitals need time‑series, queries need vector search, and reporting needs high‑performance SQL. The overhead is manageable with modern cloud services and automation.
