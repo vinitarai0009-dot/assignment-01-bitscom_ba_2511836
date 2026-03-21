@@ -1,0 +1,11 @@
+## Architecture Recommendation
+
+For a fast‑growing food delivery startup handling GPS logs, text reviews, payment transactions, and restaurant menu images, I recommend a **Data Lakehouse** architecture.
+
+### Three specific reasons:
+
+1. **Unified storage for diverse data types** – The startup collects both structured (payment transactions) and semi‑/unstructured data (GPS logs, text reviews, images). A lakehouse stores all of it in a single object store (e.g., S3) using open formats like Apache Iceberg or Delta Lake. This avoids the rigid schemas of a data warehouse and the governance challenges of a pure data lake.
+
+2. **Real‑time and machine‑learning readiness** – GPS logs require real‑time analytics for delivery tracking; text reviews need NLP sentiment analysis; images demand computer vision models. A lakehouse separates storage from compute, allowing different engines (Spark for ML, Trino for ad‑hoc SQL, Flink for streaming) to operate on the same data without costly ETL duplication.
+
+3. **Scalability and agility** – As the startup grows, new data sources (e.g., driver locations, promotional events) will emerge. A lakehouse supports schema evolution and ACID transactions, enabling the engineering team to evolve the platform quickly while maintaining data reliability. This flexibility is essential for a startup that needs to iterate on features and analytics without being constrained by traditional data warehouse limitations.
